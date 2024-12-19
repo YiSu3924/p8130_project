@@ -23,12 +23,13 @@ knitr::opts_chunk$set(
 theme_set(theme_minimal() + theme(legend.position = "bottom"))
 ```
 
-```{r}
+```{r, message=FALSE}
 # Load necessary libraries
 library(tidyverse)
 library(broom)
 library(GGally)
 library(gridExtra)
+library(kableExtra)
 
 
 # Read the dataset
@@ -292,44 +293,16 @@ knitr::kable(categorical_final, col.names = c("Variable Name and Levels", "Count
 
 
 ```{r}
-
-# Define the full model for MathScore
 math_full_model <- lm(MathScore ~ Gender + EthnicGroup + ParentEduc + LunchType + TestPrep +
                         ParentMaritalStatus + PracticeSport + IsFirstChild + NrSiblings +
                         TransportMeans + WklyStudyHours, data = data)
-
-# Perform stepwise model selection
-math_selected_model <- stepAIC(math_full_model, direction = "both", trace = FALSE)
+math_null_model = lm(MathScore ~ 1, data = data)
+math_selected_model = step(math_null_model,
+scope = list(lower = formula(math_null_model),
+upper = formula(math_full_model)))
 math_selected_model
-# Display the summary of the selected model
-cat("\nSelected Model for MathScore:\n")
-summary(math_selected_model)
-
-# Make predictions using the selected model
-math_predictions <- predict(math_selected_model, newdata = data)
-
-# Combine actual and predicted values for MathScore
-math_results <- data.frame(
-  Actual_MathScore = data$MathScore,
-  Predicted_MathScore = math_predictions
-)
-
-# Save results to a CSV file
-write.csv(math_results, "math_score_predictions.csv", row.names = FALSE)
 ```
 
-```{r}
-best_subset_math = regsubsets(MathScore ~ Gender + EthnicGroup + ParentEduc + LunchType + TestPrep + ParentMaritalStatus + PracticeSport + IsFirstChild + TransportMeans + WklyStudyHours + NrSiblings, data = data, nvmax = 11)
-best_summary = summary(best_subset_math)
-plot(best_summary$adjr2, type = "b",
-xlab = "number of predictors",
-ylab = "adjusted Rˆ2",
-main = "adjusted Rˆ2 for subsets")
-best_num_predictors <- which.max(best_summary$adjr2)
-selected_predictors <- names(coef(best_subset_math, best_num_predictors))
-cat("Selected predictors for the best model:\n")
-print(selected_predictors)
-```
 
 
 ```{r}
@@ -342,25 +315,11 @@ par(mfrow = c(1, 1))
 reading_full_model <- lm(ReadingScore ~ Gender + EthnicGroup + ParentEduc + LunchType + TestPrep +
                         ParentMaritalStatus + PracticeSport + IsFirstChild + NrSiblings +
                         TransportMeans + WklyStudyHours, data = data)
-
-# Perform stepwise model selection
-reading_selected_model <- stepAIC(reading_full_model, direction = "both", trace = FALSE)
+reading_null_model = lm(ReadingScore ~ 1, data = data)
+reading_selected_model = step(reading_null_model,
+scope = list(lower = formula(reading_null_model),
+upper = formula(reading_full_model)))
 reading_selected_model
-# Display the summary of the selected model
-cat("\nSelected Model for Reading:\n")
-summary(reading_selected_model)
-
-# Make predictions using the selected model
-reading_predictions <- predict(reading_selected_model, newdata = data)
-
-# Combine actual and predicted values for MathScore
-reading_results <- data.frame(
-  Actual_ReadingScore = data$ReadingScore,
-  Predicted_ReadingScore = reading_predictions
-)
-
-# Save results to a CSV file
-write.csv(reading_results, "reading_score_predictions.csv", row.names = FALSE)
 ```
 
 
@@ -374,25 +333,11 @@ par(mfrow = c(1, 1))
 writing_full_model <- lm(WritingScore ~ Gender + EthnicGroup + ParentEduc + LunchType + TestPrep +
                         ParentMaritalStatus + PracticeSport + IsFirstChild + NrSiblings +
                         TransportMeans + WklyStudyHours, data = data)
-
-# Perform stepwise model selection
-writing_selected_model <- stepAIC(writing_full_model, direction = "both", trace = FALSE)
+writing_null_model = lm(WritingScore ~ 1, data = data)
+writing_selected_model = step(writing_null_model,
+scope = list(lower = formula(writing_null_model),
+upper = formula(writing_full_model)))
 writing_selected_model
-# Display the summary of the selected model
-cat("\nSelected Model for WritingScore:\n")
-summary(writing_selected_model)
-
-# Make predictions using the selected model
-writing_predictions <- predict(writing_selected_model, newdata = data)
-
-# Combine actual and predicted values for MathScore
-writing_results <- data.frame(
-  Actual_WritingScore = data$WritingScore,
-  Predicted_WritingScore = writing_predictions
-)
-
-# Save results to a CSV file
-write.csv(writing_results, "writing_score_predictions.csv", row.names = FALSE)
 ```
 
 
