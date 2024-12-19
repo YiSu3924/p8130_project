@@ -1,6 +1,6 @@
 ---
 title: "bm-project"
-author: "YISU"
+author: "group-27"
 date: "2024-12-19"
 output: pdf_document
 ---
@@ -10,34 +10,24 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(MASS)
 library(leaps)
+library(broom)
+library(GGally)
+library(gridExtra)
+library(kableExtra)
 
 knitr::opts_chunk$set(
   fig.width = 6,
   fig.asp = .6,
   out.width = "90%",
   warning = FALSE,
-  message = FALSE,
-  echo = FALSE
+  message = FALSE
 )
 
 theme_set(theme_minimal() + theme(legend.position = "bottom"))
 ```
 
 ```{r, message=FALSE}
-# Load necessary libraries
-library(tidyverse)
-library(broom)
-library(GGally)
-library(gridExtra)
-library(kableExtra)
-
-
-# Read the dataset
 data <- read.csv("Project_1_data.csv")
-
-# Inspect the structure of the data
-glimpse(data)
-
 
 hist_math <- ggplot(data, aes(x = MathScore)) +
   geom_histogram(binwidth = 5, fill = "steelblue", color = "black") +
@@ -97,7 +87,6 @@ data$IsFirstChild <- as.factor(data$IsFirstChild)
 data$TransportMeans <- as.factor(data$TransportMeans)
 data$WklyStudyHours <- as.factor(data$WklyStudyHours)
 
-# Handle missing values by removing rows with NA
 data <- na.omit(data)
 ```
 
@@ -108,7 +97,6 @@ data <- na.omit(data)
 
 
 ```{r}
-library(kableExtra)
 data_dict <- tibble(
   Variable = c(
     "Gender", "EthnicGroup", "ParentEduc", "LunchType", "TestPrep", 
@@ -348,9 +336,9 @@ par(mfrow = c(1, 1))
 ```
 
 
-Summary of the the predit model
+# Summary of the the predit model
+
 ```{r}
-# Fit the three linear models
 model1 <- lm(formula = ReadingScore ~ Gender + EthnicGroup + ParentEduc + 
                LunchType + TestPrep + ParentMaritalStatus + IsFirstChild, data = data)
 
@@ -363,7 +351,7 @@ model3 <- lm(formula = WritingScore ~ Gender + EthnicGroup + ParentEduc +
 ```
 
 ```{r}
-summary(data$MathScore)  # Inspect the range of MathScore
+summary(data$MathScore)
 ```
 
 ```{r}
@@ -371,7 +359,136 @@ data$MathScore_shifted <- data$MathScore + 1
 model2_shifted <- lm(MathScore_shifted ~ Gender + EthnicGroup + ParentEduc + 
                        LunchType + TestPrep + ParentMaritalStatus + IsFirstChild + 
                        WklyStudyHours, data = data)
+```
 
+# Lasso for Writing
+
+```{r}
+library(glmnet)
+library(ggplot2)
+library(tibble)
+
+set.seed(2024)
+
+lambda_seq <- 10^seq(-3, 0, by = 0.1)
+
+x <- model.matrix(WritingScore ~ Gender + EthnicGroup + ParentEduc + LunchType + TestPrep +
+                   ParentMaritalStatus + PracticeSport + IsFirstChild + NrSiblings +
+                   TransportMeans + WklyStudyHours, data = data)[, -1]
+
+cv_object <- cv.glmnet(x, data$WritingScore, lambda = lambda_seq, nfolds = 5)
+
+cv_object
+
+tibble(lambda = cv_object$lambda, mean_cv_error = cv_object$cvm) %>%
+  ggplot(aes(x = lambda, y = mean_cv_error)) +
+  geom_point() +
+  scale_x_log10() + 
+  labs(title = "Cross-Validation Error vs. Lambda",
+       x = "Lambda (log scale)", y = "Mean Cross-Validation Error")
+
+min_lambda <- cv_object$lambda.min
+min_lambda
+
+fit_bestcv <- glmnet(x, data$WritingScore, lambda = min_lambda)
+
+coef(fit_bestcv)
+```
+
+```{r}
+writing_lasso_formula <- WritingScore ~ Gender + EthnicGroup + ParentEduc + LunchType
+writing_selected_model <- lm(
+  formula = WritingScore ~ Gender + EthnicGroup + ParentEduc + LunchType,
+  data = data
+)
+
+summary(writing_selected_model)
+```
+
+# Lasso for Math
+
+```{r}
+set.seed(2024)
+
+lambda_seq <- 10^seq(-3, 0, by = 0.1)
+
+x <- model.matrix(MathScore ~ Gender + EthnicGroup + ParentEduc + LunchType + TestPrep +
+                   ParentMaritalStatus + PracticeSport + IsFirstChild + NrSiblings +
+                   TransportMeans + WklyStudyHours, data = data)[, -1]
+
+cv_object <- cv.glmnet(x, data$MathScore, lambda = lambda_seq, nfolds = 5)
+
+cv_object
+
+tibble(lambda = cv_object$lambda, mean_cv_error = cv_object$cvm) %>%
+  ggplot(aes(x = lambda, y = mean_cv_error)) +
+  geom_point() +
+  scale_x_log10() + 
+  labs(title = "Cross-Validation Error vs. Lambda",
+       x = "Lambda (log scale)", y = "Mean Cross-Validation Error")
+
+min_lambda <- cv_object$lambda.min
+min_lambda
+
+fit_bestcv <- glmnet(x, data$MathScore, lambda = min_lambda)
+
+coef(fit_bestcv)
+```
+
+```{r}
+math_lasso_formula <- MathScore ~ Gender + EthnicGroup + ParentEduc + LunchType + TestPrep +
+                      ParentMaritalStatus + PracticeSport + IsFirstChild + NrSiblings +
+                      TransportMeans + WklyStudyHours
+
+math_selected_model <- lm(
+  formula = math_lasso_formula,
+  data = data
+)
+
+summary(math_selected_model)
+```
+
+# Lasso for Reading
+
+```{r}
+set.seed(2024)
+
+lambda_seq <- 10^seq(-3, 0, by = 0.1)
+
+x <- model.matrix(ReadingScore ~ Gender + EthnicGroup + ParentEduc + LunchType + TestPrep +
+                   ParentMaritalStatus + PracticeSport + IsFirstChild + NrSiblings +
+                   TransportMeans + WklyStudyHours, data = data)[, -1]
+
+cv_object <- cv.glmnet(x, data$ReadingScore, lambda = lambda_seq, nfolds = 5)
+
+cv_object
+
+tibble(lambda = cv_object$lambda, mean_cv_error = cv_object$cvm) %>%
+  ggplot(aes(x = lambda, y = mean_cv_error)) +
+  geom_point() +
+  scale_x_log10() + 
+  labs(title = "Cross-Validation Error vs. Lambda",
+       x = "Lambda (log scale)", y = "Mean Cross-Validation Error")
+
+min_lambda <- cv_object$lambda.min
+min_lambda
+
+fit_bestcv <- glmnet(x, data$ReadingScore, lambda = min_lambda)
+
+coef(fit_bestcv)
+```
+
+```{r}
+reading_lasso_formula <- ReadingScore ~ Gender + EthnicGroup + ParentEduc + LunchType + TestPrep +
+                        ParentMaritalStatus + PracticeSport + IsFirstChild + NrSiblings +
+                        TransportMeans + WklyStudyHours
+
+reading_selected_model <- lm(
+  formula = reading_lasso_formula,
+  data = data
+)
+
+summary(reading_selected_model)
 ```
 
 
