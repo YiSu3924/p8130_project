@@ -511,3 +511,15 @@ title("Model 3: WritingScore")
 # Reset graphical parameters (optional)
 par(mfrow = c(1, 1))
 ```
+
+```{r}
+correlation_matrix <- cor(data[, c("MathScore", "WritingScore", "ReadingScore")], use = "complete.obs")
+
+print(correlation_matrix)
+
+library(corrplot)
+corrplot(correlation_matrix, method = "circle", type = "upper", tl.col = "black", tl.srt = 45)
+```
+
+
+
