@@ -11,33 +11,64 @@ library(tidyverse)
 library(MASS)
 ```
 
-
 ```{r}
-data = read.csv("Project_1_data.csv")
-```
+# Load necessary libraries
+library(tidyverse)
+library(broom)
+library(GGally)
+library(gridExtra)
 
-```{r}
-# Load necessary library
-library(ggplot2)
 
-# Load your dataset
+# Read the dataset
 data <- read.csv("Project_1_data.csv")
 
-# Select only numeric variables
-numeric_data <- data[sapply(data, is.numeric)]
+# Inspect the structure of the data
+glimpse(data)
 
-# Set up the plotting area to accommodate all 11 histograms
-par(mfrow = c(3, 4)) # 3 rows and 4 columns (will leave one empty space for 11 variables)
 
-# Create histograms for each numeric variable
-for (variable in names(numeric_data)) {
-  hist(numeric_data[[variable]], 
-       main = paste("Histogram of", variable), 
-       col = "lightblue", 
-       xlab = variable, 
-       border = "white")
-}
-par(mfrow = c(1, 1))
+hist_math <- ggplot(data, aes(x = MathScore)) +
+  geom_histogram(binwidth = 5, fill = "steelblue", color = "black") +
+  labs(title = "Histogram of Math Scores", x = "Math Score", y = "Frequency")
+
+hist_reading <- ggplot(data, aes(x = ReadingScore)) +
+  geom_histogram(binwidth = 5, fill = "firebrick", color = "black") +
+  labs(title = "Histogram of Reading Scores", x = "Reading Score", y = "Frequency")
+
+hist_writing <- ggplot(data, aes(x = WritingScore)) +
+  geom_histogram(binwidth = 5, fill = "darkgreen", color = "black") +
+  labs(title = "Histogram of Writing Scores", x = "Writing Score", y = "Frequency")
+box_nr_siblings <- ggplot(data, aes(y = NrSiblings)) +
+  geom_boxplot(fill = "lightblue") +
+  labs(title = "Boxplot of Number of Siblings", y = "Number of Siblings")
+
+box_wkly_study_hours <- ggplot(data, aes(y = WklyStudyHours)) +
+  geom_boxplot(fill = "lightgreen") +
+  labs(title = "Boxplot of Weekly Study Hours", y = "Weekly Study Hours")
+scatter_math_reading <- ggplot(data, aes(x = ReadingScore, y = MathScore)) +
+  geom_point(color = "darkblue") +
+  labs(title = "Math Score vs. Reading Score", x = "Reading Score", y = "Math Score")
+
+scatter_reading_writing <- ggplot(data, aes(x = WritingScore, y = ReadingScore)) +
+  geom_point(color = "darkred") +
+  labs(title = "Reading Score vs. Writing Score", x = "Writing Score", y = "Reading Score")
+# Convert categorical variables to factors if needed
+data <- data %>%
+  mutate(across(c(Gender, EthnicGroup, ParentEduc, LunchType, TestPrep, 
+                  ParentMaritalStatus, PracticeSport, IsFirstChild, 
+                  TransportMeans, WklyStudyHours), as.factor))
+
+pairwise_plots <- ggpairs(data,
+  columns = c("MathScore", "ReadingScore", "WritingScore", "NrSiblings", "WklyStudyHours"),
+  aes(color = Gender),
+  lower = list(continuous = "smooth"),
+  upper = list(continuous = "cor"),
+  diag = list(continuous = "densityDiag"))
+grid.arrange(
+  hist_math, hist_reading, hist_writing,
+  box_nr_siblings, box_wkly_study_hours,
+  scatter_math_reading, scatter_reading_writing,
+  ncol = 2
+)
 ```
 
 
@@ -83,6 +114,12 @@ write.csv(math_results, "math_score_predictions.csv", row.names = FALSE)
 
 
 ```{r}
+par(mfrow = c(2, 2)) 
+plot(math_selected_model)
+par(mfrow = c(1, 1))
+```
+
+```{r}
 reading_full_model <- lm(ReadingScore ~ Gender + EthnicGroup + ParentEduc + LunchType + TestPrep +
                         ParentMaritalStatus + PracticeSport + IsFirstChild + NrSiblings +
                         TransportMeans + WklyStudyHours, data = data)
@@ -105,6 +142,13 @@ reading_results <- data.frame(
 
 # Save results to a CSV file
 write.csv(reading_results, "reading_score_predictions.csv", row.names = FALSE)
+```
+
+
+```{r}
+par(mfrow = c(2, 2)) 
+plot(reading_selected_model)
+par(mfrow = c(1, 1))
 ```
 
 ```{r}
@@ -131,3 +175,11 @@ writing_results <- data.frame(
 # Save results to a CSV file
 write.csv(writing_results, "writing_score_predictions.csv", row.names = FALSE)
 ```
+
+
+```{r}
+par(mfrow = c(2, 2)) 
+plot(writing_selected_model)
+par(mfrow = c(1, 1))
+```
+
