@@ -1,0 +1,133 @@
+---
+title: "bm-project"
+author: "YISU"
+date: "2024-12-19"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(MASS)
+```
+
+
+```{r}
+data = read.csv("Project_1_data.csv")
+```
+
+```{r}
+# Load necessary library
+library(ggplot2)
+
+# Load your dataset
+data <- read.csv("Project_1_data.csv")
+
+# Select only numeric variables
+numeric_data <- data[sapply(data, is.numeric)]
+
+# Set up the plotting area to accommodate all 11 histograms
+par(mfrow = c(3, 4)) # 3 rows and 4 columns (will leave one empty space for 11 variables)
+
+# Create histograms for each numeric variable
+for (variable in names(numeric_data)) {
+  hist(numeric_data[[variable]], 
+       main = paste("Histogram of", variable), 
+       col = "lightblue", 
+       xlab = variable, 
+       border = "white")
+}
+par(mfrow = c(1, 1))
+```
+
+
+```{r}
+data$Gender <- as.factor(data$Gender)
+data$EthnicGroup <- as.factor(data$EthnicGroup)
+data$ParentEduc <- as.factor(data$ParentEduc)
+data$LunchType <- as.factor(data$LunchType)
+data$TestPrep <- as.factor(data$TestPrep)
+data$ParentMaritalStatus <- as.factor(data$ParentMaritalStatus)
+data$PracticeSport <- as.factor(data$PracticeSport)
+data$IsFirstChild <- as.factor(data$IsFirstChild)
+data$TransportMeans <- as.factor(data$TransportMeans)
+data$WklyStudyHours <- as.factor(data$WklyStudyHours)
+
+# Handle missing values by removing rows with NA
+data <- na.omit(data)
+
+# Define the full model for MathScore
+math_full_model <- lm(MathScore ~ Gender + EthnicGroup + ParentEduc + LunchType + TestPrep +
+                        ParentMaritalStatus + PracticeSport + IsFirstChild + NrSiblings +
+                        TransportMeans + WklyStudyHours, data = data)
+
+# Perform stepwise model selection
+math_selected_model <- stepAIC(math_full_model, direction = "both", trace = FALSE)
+math_selected_model
+# Display the summary of the selected model
+cat("\nSelected Model for MathScore:\n")
+summary(math_selected_model)
+
+# Make predictions using the selected model
+math_predictions <- predict(math_selected_model, newdata = data)
+
+# Combine actual and predicted values for MathScore
+math_results <- data.frame(
+  Actual_MathScore = data$MathScore,
+  Predicted_MathScore = math_predictions
+)
+
+# Save results to a CSV file
+write.csv(math_results, "math_score_predictions.csv", row.names = FALSE)
+```
+
+
+```{r}
+reading_full_model <- lm(ReadingScore ~ Gender + EthnicGroup + ParentEduc + LunchType + TestPrep +
+                        ParentMaritalStatus + PracticeSport + IsFirstChild + NrSiblings +
+                        TransportMeans + WklyStudyHours, data = data)
+
+# Perform stepwise model selection
+reading_selected_model <- stepAIC(reading_full_model, direction = "both", trace = FALSE)
+reading_selected_model
+# Display the summary of the selected model
+cat("\nSelected Model for Reading:\n")
+summary(reading_selected_model)
+
+# Make predictions using the selected model
+reading_predictions <- predict(reading_selected_model, newdata = data)
+
+# Combine actual and predicted values for MathScore
+reading_results <- data.frame(
+  Actual_ReadingScore = data$ReadingScore,
+  Predicted_ReadingScore = reading_predictions
+)
+
+# Save results to a CSV file
+write.csv(reading_results, "reading_score_predictions.csv", row.names = FALSE)
+```
+
+```{r}
+writing_full_model <- lm(WritingScore ~ Gender + EthnicGroup + ParentEduc + LunchType + TestPrep +
+                        ParentMaritalStatus + PracticeSport + IsFirstChild + NrSiblings +
+                        TransportMeans + WklyStudyHours, data = data)
+
+# Perform stepwise model selection
+writing_selected_model <- stepAIC(writing_full_model, direction = "both", trace = FALSE)
+writing_selected_model
+# Display the summary of the selected model
+cat("\nSelected Model for WritingScore:\n")
+summary(writing_selected_model)
+
+# Make predictions using the selected model
+writing_predictions <- predict(writing_selected_model, newdata = data)
+
+# Combine actual and predicted values for MathScore
+writing_results <- data.frame(
+  Actual_WritingScore = data$WritingScore,
+  Predicted_WritingScore = writing_predictions
+)
+
+# Save results to a CSV file
+write.csv(writing_results, "writing_score_predictions.csv", row.names = FALSE)
+```
