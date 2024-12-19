@@ -10,6 +10,17 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(MASS)
 library(leaps)
+
+knitr::opts_chunk$set(
+  fig.width = 6,
+  fig.asp = .6,
+  out.width = "90%",
+  warning = FALSE,
+  message = FALSE,
+  echo = FALSE
+)
+
+theme_set(theme_minimal() + theme(legend.position = "bottom"))
 ```
 
 ```{r}
@@ -87,6 +98,200 @@ data$WklyStudyHours <- as.factor(data$WklyStudyHours)
 
 # Handle missing values by removing rows with NA
 data <- na.omit(data)
+```
+
+```{r}
+data[data == "" | data == " "] <- NA
+data <- na.omit(data)
+```
+
+
+```{r}
+library(kableExtra)
+data_dict <- tibble(
+  Variable = c(
+    "Gender", "EthnicGroup", "ParentEduc", "LunchType", "TestPrep", 
+    "ParentMaritalStatus", "PracticeSport", "IsFirstChild", "NrSiblings", 
+    "TransportMeans", "WklyStudyHours", "MathScore", "ReadingScore", "WritingScore"
+  ),
+  Description = c(
+    "Gender of the student (male/female)",
+    "Ethnic group of the student (group A to E)",
+    "Parent(s) education background (from some_highschool to master's degree)",
+    "School lunch type (standard or free/reduced)",
+    "Test preparation course followed (completed or none)",
+    "Parent(s) marital status (married/single/widowed/divorced)",
+    "How often the student practices sport (never/sometimes/regularly)",
+    "If the child is the first child in the family (yes/no)",
+    "Number of siblings the student has (0 to 7)",
+    "Means of transport to school (schoolbus/private)",
+    "Weekly self-study hours (less that 5 hours; between 5 and 10 hours; more than
+10 hours)",
+    "Math test score (0-100)",
+    "Reading test score (0-100)",
+    "Writing test score (0-100)"
+  )
+)
+
+data_dict %>% 
+  knitr::kable(caption = "Data Dictionary") %>% 
+  kable_styling() %>%
+  column_spec(1, width = "12em") %>% 
+  column_spec(2, width = "32em")
+```
+
+
+```{r, echo=FALSE}
+numeric_summary = data |> 
+  summarize(
+    NrSiblings_Mean = mean(NrSiblings, na.rm = TRUE),
+    NrSiblings_SD = sd(NrSiblings, na.rm = TRUE),
+    NrSiblings_Median = median(NrSiblings, na.rm = TRUE),
+    NrSiblings_IQR = IQR(NrSiblings, na.rm = TRUE),
+    NrSiblings_Max = max(NrSiblings, na.rm = TRUE),
+    NrSiblings_Min = min(NrSiblings, na.rm = TRUE),
+    
+    MathScore_Mean = mean(MathScore, na.rm = TRUE),
+    MathScore_SD = sd(MathScore, na.rm = TRUE),
+    MathScore_Median = median(MathScore, na.rm = TRUE),
+    MathScore_IQR = IQR(MathScore, na.rm = TRUE),
+    MathScore_Max = max(MathScore, na.rm = TRUE),
+    MathScore_Min = min(MathScore, na.rm = TRUE),
+    
+    ReadingScore_Mean = mean(ReadingScore, na.rm = TRUE),
+    ReadingScore_SD = sd(ReadingScore, na.rm = TRUE),
+    ReadingScore_Median = median(ReadingScore, na.rm = TRUE),
+    ReadingScore_IQR = IQR(ReadingScore, na.rm = TRUE),
+    ReadingScore_Max = max(ReadingScore, na.rm = TRUE),
+    ReadingScore_Min = min(ReadingScore, na.rm = TRUE),
+    
+    WritingScore_Mean = mean(WritingScore, na.rm = TRUE),
+    WritingScore_SD = sd(WritingScore, na.rm = TRUE),
+    WritingScore_Median = median(WritingScore, na.rm = TRUE),
+    WritingScore_IQR = IQR(WritingScore, na.rm = TRUE),
+    WritingScore_Max = max(WritingScore, na.rm = TRUE),
+    WritingScore_Min = min(WritingScore, na.rm = TRUE)
+  )
+
+
+numeric_table = data.frame(
+  Variable = c("NrSiblings", "MathScore", "ReadingScore", "WritingScore"),
+  Mean = c(numeric_summary$NrSiblings_Mean, numeric_summary$MathScore_Mean, 
+           numeric_summary$ReadingScore_Mean, numeric_summary$WritingScore_Mean),
+  SD = c(numeric_summary$NrSiblings_SD, numeric_summary$MathScore_SD, 
+         numeric_summary$ReadingScore_SD, numeric_summary$WritingScore_SD),
+  Median = c(numeric_summary$NrSiblings_Median, numeric_summary$MathScore_Median, 
+             numeric_summary$ReadingScore_Median, numeric_summary$WritingScore_Median),
+  IQR = c(numeric_summary$NrSiblings_IQR, numeric_summary$MathScore_IQR, 
+          numeric_summary$ReadingScore_IQR, numeric_summary$WritingScore_IQR),
+  Max = c(numeric_summary$NrSiblings_Max, numeric_summary$MathScore_Max, 
+          numeric_summary$ReadingScore_Max, numeric_summary$WritingScore_Max),
+  Min = c(numeric_summary$NrSiblings_Min, numeric_summary$MathScore_Min, 
+          numeric_summary$ReadingScore_Min, numeric_summary$WritingScore_Min)
+)
+
+knitr::kable(numeric_table, col.names = c("Variable Name", "Mean", "SD", "Median", "IQR", "Max", "Min"), 
+             caption = "Summary Statistics for all Numeric Variables", format = "pipe")
+
+```
+
+
+```{r}
+categorical_table <- data |> 
+  summarize(
+    gender_Male = sum(Gender == "male", na.rm = TRUE),
+    gender_Female = sum(Gender == "female", na.rm = TRUE),
+    
+    ethnicgroup_A = sum(EthnicGroup == "group A", na.rm = TRUE),
+    ethnicgroup_B = sum(EthnicGroup == "group B", na.rm = TRUE),
+    ethnicgroup_C = sum(EthnicGroup == "group C", na.rm = TRUE),
+    ethnicgroup_D = sum(EthnicGroup == "group D", na.rm = TRUE),
+    ethnicgroup_E = sum(EthnicGroup == "group E", na.rm = TRUE),
+    
+    parenteduc_SomeHighSchool = sum(ParentEduc == "some college", na.rm = TRUE),
+    parenteduc_HighSchool = sum(ParentEduc == "some high School", na.rm = TRUE),
+    parenteduc_Associates = sum(ParentEduc == "associate's degree high school", na.rm = TRUE),
+    parenteduc_Bachelors = sum(ParentEduc == "bachelor's degree", na.rm = TRUE),
+    parenteduc_Masters = sum(ParentEduc == "master's degree", na.rm = TRUE),
+    
+    lunchtime_Standard = sum(LunchType == "standard", na.rm = TRUE),
+    lunchtime_FreeReduced = sum(LunchType == "free/reduced", na.rm = TRUE),
+    
+    testprep_Completed = sum(TestPrep == "completed", na.rm = TRUE),
+    testprep_None = sum(TestPrep == "none", na.rm = TRUE),
+    
+    parentmaritalstatus_Married = sum(ParentMaritalStatus == "married", na.rm = TRUE),
+    parentmaritalstatus_Single = sum(ParentMaritalStatus == "single", na.rm = TRUE),
+    parentmaritalstatus_Widowed = sum(ParentMaritalStatus == "widowed", na.rm = TRUE),
+    parentmaritalstatus_Divorced = sum(ParentMaritalStatus == "divorced", na.rm = TRUE),
+    
+    practicesport_Never = sum(PracticeSport == "never", na.rm = TRUE),
+    practicesport_Sometimes = sum(PracticeSport == "sometimes", na.rm = TRUE),
+    practicesport_Regularly = sum(PracticeSport == "regularly", na.rm = TRUE),
+    
+    isfirstchild_Yes = sum(IsFirstChild == "yes", na.rm = TRUE),
+    isfirstchild_No = sum(IsFirstChild == "no", na.rm = TRUE),
+    
+    transportmeans_SchoolBus = sum(TransportMeans == "school_bus", na.rm = TRUE),
+    transportmeans_Private = sum(TransportMeans == "private", na.rm = TRUE),
+    
+    wklystudyhours_LessThan5 = sum(WklyStudyHours == "< 5", na.rm = TRUE),
+    wklystudyhours_5to10 = sum(WklyStudyHours == "10-May", na.rm = TRUE),
+    wklystudyhours_MoreThan10 = sum(WklyStudyHours == "> 10", na.rm = TRUE)
+  )
+
+
+categorical_final <- data.frame(
+  Variable = c("Gender Male", "Gender Female",
+               "EthnicGroup A", "EthnicGroup B", "EthnicGroup C", "EthnicGroup D", "EthnicGroup E",
+               "ParentEduc Some High School", "ParentEduc High School", "ParentEduc Associates", 
+               "ParentEduc Bachelors", "ParentEduc Masters", 
+               "LunchType Standard", "LunchType Free/Reduced", 
+               "TestPrep Completed", "TestPrep None", 
+               "ParentMaritalStatus Married", "ParentMaritalStatus Single", "ParentMaritalStatus Widowed", "ParentMaritalStatus Divorced",
+               "PracticeSport Never", "PracticeSport Sometimes", "PracticeSport Regularly",
+               "IsFirstChild Yes", "IsFirstChild No", 
+               "TransportMeans SchoolBus", "TransportMeans Private",
+               "WklyStudyHours Less than 5", "WklyStudyHours 5-10", "WklyStudyHours More than 10"),
+  Count = c(
+    categorical_table$gender_Male, categorical_table$gender_Female,
+    categorical_table$ethnicgroup_A, categorical_table$ethnicgroup_B, categorical_table$ethnicgroup_C, categorical_table$ethnicgroup_D, categorical_table$ethnicgroup_E,
+    categorical_table$parenteduc_SomeHighSchool, categorical_table$parenteduc_HighSchool, categorical_table$parenteduc_Associates, 
+    categorical_table$parenteduc_Bachelors, categorical_table$parenteduc_Masters, 
+    categorical_table$lunchtime_Standard, categorical_table$lunchtime_FreeReduced, 
+    categorical_table$testprep_Completed, categorical_table$testprep_None, 
+    categorical_table$parentmaritalstatus_Married, categorical_table$parentmaritalstatus_Single, categorical_table$parentmaritalstatus_Widowed, categorical_table$parentmaritalstatus_Divorced,
+    categorical_table$practicesport_Never, categorical_table$practicesport_Sometimes, categorical_table$practicesport_Regularly,
+    categorical_table$isfirstchild_Yes, categorical_table$isfirstchild_No, 
+    categorical_table$transportmeans_SchoolBus, categorical_table$transportmeans_Private,
+    categorical_table$wklystudyhours_LessThan5, categorical_table$wklystudyhours_5to10, categorical_table$wklystudyhours_MoreThan10
+  ),
+  Proportion = round(c(
+    categorical_table$gender_Male / nrow(data), categorical_table$gender_Female / nrow(data),
+    categorical_table$ethnicgroup_A / nrow(data), categorical_table$ethnicgroup_B / nrow(data), categorical_table$ethnicgroup_C / nrow(data), 
+    categorical_table$ethnicgroup_D / nrow(data), categorical_table$ethnicgroup_E / nrow(data),
+    categorical_table$parenteduc_SomeHighSchool / nrow(data), categorical_table$parenteduc_HighSchool / nrow(data), 
+    categorical_table$parenteduc_Associates / nrow(data), categorical_table$parenteduc_Bachelors / nrow(data), 
+    categorical_table$parenteduc_Masters / nrow(data),
+    categorical_table$lunchtime_Standard / nrow(data), categorical_table$lunchtime_FreeReduced / nrow(data),
+    categorical_table$testprep_Completed / nrow(data), categorical_table$testprep_None / nrow(data),
+    categorical_table$parentmaritalstatus_Married / nrow(data), categorical_table$parentmaritalstatus_Single / nrow(data),
+    categorical_table$parentmaritalstatus_Widowed / nrow(data), categorical_table$parentmaritalstatus_Divorced / nrow(data),
+    categorical_table$practicesport_Never / nrow(data), categorical_table$practicesport_Sometimes / nrow(data),
+    categorical_table$practicesport_Regularly / nrow(data),
+    categorical_table$isfirstchild_Yes / nrow(data), categorical_table$isfirstchild_No / nrow(data),
+    categorical_table$transportmeans_SchoolBus / nrow(data), categorical_table$transportmeans_Private / nrow(data),
+    categorical_table$wklystudyhours_LessThan5 / nrow(data), categorical_table$wklystudyhours_5to10 / nrow(data), 
+    categorical_table$wklystudyhours_MoreThan10 / nrow(data)
+  ), 4)
+)
+
+knitr::kable(categorical_final, col.names = c("Variable Name and Levels", "Count", "Proportion"), 
+             caption = "Summary Statistics for all Categorical Variables", format = "pipe")
+```
+
+
+```{r}
 
 # Define the full model for MathScore
 math_full_model <- lm(MathScore ~ Gender + EthnicGroup + ParentEduc + LunchType + TestPrep +
@@ -222,7 +427,6 @@ model2_shifted <- lm(MathScore_shifted ~ Gender + EthnicGroup + ParentEduc +
                        LunchType + TestPrep + ParentMaritalStatus + IsFirstChild + 
                        WklyStudyHours, data = data)
 
-```
 ```
 
 
