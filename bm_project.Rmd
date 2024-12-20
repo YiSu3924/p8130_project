@@ -388,13 +388,15 @@ coef(fit_bestcv)
 ```
 
 ```{r}
-writing_lasso_formula <- WritingScore ~ Gender + EthnicGroup + ParentEduc + LunchType
-writing_selected_model <- lm(
-  formula = WritingScore ~ Gender + EthnicGroup + ParentEduc + LunchType,
+writing_lasso_formula <- WritingScore ~ EthnicGroup + ParentEduc + LunchType + TestPrep +
+                 ParentMaritalStatus + PracticeSport + IsFirstChild +
+                 NrSiblings + WklyStudyHours
+writing_selected_lasso <- lm(
+  formula = writing_lasso_formula,
   data = data
 )
 
-summary(writing_selected_model)
+summary(writing_selected_lasso)
 ```
 
 # Lasso for Math
@@ -428,16 +430,16 @@ coef(fit_bestcv)
 ```
 
 ```{r}
-math_lasso_formula <- MathScore ~ Gender + EthnicGroup + ParentEduc + LunchType + TestPrep +
-                      ParentMaritalStatus + PracticeSport + IsFirstChild + NrSiblings +
-                      TransportMeans + WklyStudyHours
+math_lasso_formula <- MathScore ~ EthnicGroup + ParentEduc + LunchType + TestPrep +
+              ParentMaritalStatus + PracticeSport + IsFirstChild +
+              NrSiblings + WklyStudyHours
 
-math_selected_model <- lm(
+math_selected_lasso <- lm(
   formula = math_lasso_formula,
   data = data
 )
 
-summary(math_selected_model)
+summary(math_selected_lasso)
 ```
 
 # Lasso for Reading
@@ -472,14 +474,14 @@ coef(fit_bestcv)
 
 ```{r}
 reading_lasso_formula <- ReadingScore ~ Gender + EthnicGroup + ParentEduc + LunchType + TestPrep +
-                        ParentMaritalStatus + PracticeSport + IsFirstChild + NrSiblings +
-                        TransportMeans + WklyStudyHours
+                 ParentMaritalStatus + PracticeSport + IsFirstChild +
+                 NrSiblings + TransportMeans + WklyStudyHours
 
-reading_selected_model <- lm(
+reading_selected_lasso <- lm(
   formula = reading_lasso_formula,
   data = data
 )
-summary(reading_selected_model)
+summary(reading_selected_lasso)
 ```
 
 # Test for interaction
@@ -510,11 +512,11 @@ model2_shifted <- lm(MathScore_shifted ~ Gender + EthnicGroup + ParentEduc +
 
 ```{r}
 par(mfrow = c(1, 3))
-boxcox(model1, lambda = seq(-2, 2, by = 0.1))  # Range of lambda values
+boxcox(model1, lambda = seq(-2, 2, by = 0.1))
 title("Model 1: ReadingScore")
-boxcox(model2_shifted, lambda = seq(-2, 2, by = 0.1))  # Range of lambda values
+boxcox(model2_shifted, lambda = seq(-2, 2, by = 0.1)) 
 title("Model 2: MathScore")
-boxcox(model3, lambda = seq(-2, 2, by = 0.1))  # Range of lambda values
+boxcox(model3, lambda = seq(-2, 2, by = 0.1)) 
 title("Model 3: WritingScore")
 par(mfrow = c(1, 1))
 ```
