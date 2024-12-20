@@ -295,7 +295,7 @@ math_null_model = lm(MathScore ~ 1, data = data)
 math_selected_model = step(math_null_model,
 scope = list(lower = formula(math_null_model),
 upper = formula(math_full_model)))
-math_selected_model
+summary(math_selected_model)
 ```
 
 
@@ -314,7 +314,7 @@ reading_null_model = lm(ReadingScore ~ 1, data = data)
 reading_selected_model = step(reading_null_model,
 scope = list(lower = formula(reading_null_model),
 upper = formula(reading_full_model)))
-reading_selected_model
+summary(reading_selected_model)
 ```
 
 
@@ -332,7 +332,7 @@ writing_null_model = lm(WritingScore ~ 1, data = data)
 writing_selected_model = step(writing_null_model,
 scope = list(lower = formula(writing_null_model),
 upper = formula(writing_full_model)))
-writing_selected_model
+summary(writing_selected_model)
 ```
 
 
